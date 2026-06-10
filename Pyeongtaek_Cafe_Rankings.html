@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pyeongtaek Cafe Rankings</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f12;
+  --card: #1a1a20;
+  --card-hover: #22222a;
+  --accent: #c9a96e;
+  --accent2: #8b7355;
+  --text: #e8e6e1;
+  --text-dim: #9a958d;
+  --border: #2a2a32;
+  --coffee: #d4a574;
+  --food: #7fb069;
+  --dessert: #e8a0bf;
+  --vibes: #7ec8e3;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.hero {
+  position: relative;
+  padding: 60px 20px 40px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(201,169,110,0.08) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+.hero p {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.stat { text-align: center; }
+.stat .num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  display: block;
+}
+.stat .label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.filters {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(15,15,18,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.filter-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 4px;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-chip {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+.filter-chip.active {
+  background: var(--accent);
+  color: #1a1a1a;
+  border-color: var(--accent);
+}
+.filter-chip:hover:not(.active) {
+  border-color: var(--accent2);
+  color: var(--text);
+}
+.search-box { position: relative; }
+.search-box input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-box input:focus { border-color: var(--accent); }
+.search-box svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  stroke: var(--text-dim);
+  pointer-events: none;
+}
+.cards-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.cafe-card {
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+.cafe-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  border-color: var(--accent2);
+}
+.cafe-card.expanded { border-color: var(--accent); }
+.card-header {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.rank-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  color: white;
+}
+.rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+.rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); }
+.rank-3 { background: linear-gradient(135deg, #CD7F32, #B87333); }
+.rank-other { background: var(--border); color: var(--text-dim); }
+.card-info { flex: 1; min-width: 0; }
+.card-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+.distance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(201,169,110,0.12);
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+.tier-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tier-s { background: linear-gradient(135deg, #c9a96e, #e8d5a3); color: #3d2e0a; }
+.tier-a { background: linear-gradient(135deg, #a8c0ff, #3f2b96); color: white; }
+.tier-b { background: linear-gradient(135deg, #56ab2f, #a8e063); color: #1a3a0a; }
+.tier-c { background: linear-gradient(135deg, #636363, #a2a2a2); color: white; }
+.overall-score {
+  text-align: center;
+  flex-shrink: 0;
+}
+.overall-score .score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.overall-score .label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  background: var(--card-hover);
+}
+.cafe-card.expanded .card-body { max-height: 400px; }
+.card-body-inner { padding: 0 16px 16px; }
+.ratings-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.rating-item {
+  text-align: center;
+  padding: 10px 4px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+}
+.rating-item.highlight {
+  background: rgba(201,169,110,0.1);
+  border: 1px solid rgba(201,169,110,0.2);
+}
+.rating-item .cat-icon {
+  width: 24px;
+  height: 24px;
+  margin: 0 auto 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+.rating-item .cat-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.rating-item .cat-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.rating-item.coffee .cat-icon { background: rgba(212,165,116,0.15); color: var(--coffee); }
+.rating-item.coffee .cat-score { color: var(--coffee); }
+.rating-item.food .cat-icon { background: rgba(127,176,105,0.15); color: var(--food); }
+.rating-item.food .cat-score { color: var(--food); }
+.rating-item.dessert .cat-icon { background: rgba(232,160,191,0.15); color: var(--dessert); }
+.rating-item.dessert .cat-score { color: var(--dessert); }
+.rating-item.vibes .cat-icon { background: rgba(126,200,227,0.15); color: var(--vibes); }
+.rating-item.vibes .cat-score { color: var(--vibes); }
+.best-at {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(201,169,110,0.1);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.address-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.address-box svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  stroke: var(--accent2);
+  margin-top: 2px;
+}
+.chevron {
+  width: 20px;
+  height: 20px;
+  stroke: var(--text-dim);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.cafe-card.expanded .chevron {
+  transform: rotate(180deg);
+  stroke: var(--accent);
+}
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  stroke: var(--border);
+  margin-bottom: 16px;
+}
+.footer {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.cafe-card { animation: fadeIn 0.4s ease-out forwards; }
+.cafe-card:nth-child(1) { animation-delay: 0.05s; }
+.cafe-card:nth-child(2) { animation-delay: 0.1s; }
+.cafe-card:nth-child(3) { animation-delay: 0.15s; }
+.cafe-card:nth-child(4) { animation-delay: 0.2s; }
+.cafe-card:nth-child(5) { animation-delay: 0.25s; }
+.cafe-card:nth-child(6) { animation-delay: 0.3s; }
+.cafe-card:nth-child(7) { animation-delay: 0.35s; }
+.cafe-card:nth-child(8) { animation-delay: 0.4s; }
+.cafe-card:nth-child(9) { animation-delay: 0.45s; }
+.cafe-card:nth-child(10) { animation-delay: 0.5s; }
+.cafe-card:nth-child(11) { animation-delay: 0.55s; }
+.cafe-card:nth-child(12) { animation-delay: 0.6s; }
+.cafe-card:nth-child(13) { animation-delay: 0.65s; }
+.cafe-card:nth-child(14) { animation-delay: 0.7s; }
+.cafe-card:nth-child(15) { animation-delay: 0.75s; }
+@media (min-width: 640px) {
+  .hero h1 { font-size: 2.8rem; }
+  .cards-container { padding: 24px; gap: 16px; }
+  .card-header { padding: 20px; }
+  .card-body-inner { padding: 0 20px 20px; }
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="hero">
+  <h1>Pyeongtaek Cafes</h1>
+  <p>Ranked by overall quality near Camp Humphreys</p>
+  <div class="stats-bar">
+    <div class="stat"><span class="num">15</span><span class="label">Cafes</span></div>
+    <div class="stat"><span class="num">8.2</span><span class="label">Avg Score</span></div>
+    <div class="stat"><span class="num">2-3m</span><span class="label">Closest</span></div>
+  </div>
+</div>
+<div class="filters">
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="searchInput" placeholder="Search cafes..." autocomplete="off">
+  </div>
+  <div class="filter-row" id="sortFilters">
+    <button class="filter-chip active" data-sort="overall">Overall</button>
+    <button class="filter-chip" data-sort="coffee">Coffee</button>
+    <button class="filter-chip" data-sort="food">Food</button>
+    <button class="filter-chip" data-sort="dessert">Dessert</button>
+    <button class="filter-chip" data-sort="vibes">Vibes</button>
+    <button class="filter-chip" data-sort="distance">Distance</button>
+  </div>
+  <div class="filter-row" id="tierFilters">
+    <button class="filter-chip active" data-tier="all">All Tiers</button>
+    <button class="filter-chip" data-tier="S-Tier">S-Tier</button>
+    <button class="filter-chip" data-tier="A-Tier">A-Tier</button>
+    <button class="filter-chip" data-tier="B-Tier">B-Tier</button>
+    <button class="filter-chip" data-tier="C-Tier">C-Tier</button>
+  </div>
+</div>
+<div class="cards-container" id="cardsContainer"></div>
+<div class="footer">
+  <p>Data compiled from local reviews & ratings</p>
+</div>
+<script>
+const cafes = [{"Rank": 11, "Cafe": "Archive Cafe", "Distance": "25-30 min", "Coffee": 8.5, "Food": 9.5, "Dessert": 9.5, "Vibes": 10.0, "Address": "468 Gangbyeon-ro, Oseong-myeon", "Overall": 9.4, "BestAt": "Vibes", "Tier": "S-Tier"}, {"Rank": 6, "Cafe": "빵과 당신", "Distance": "15-20 min", "Coffee": 7.0, "Food": 9.5, "Dessert": 10.0, "Vibes": 8.5, "Address": "Manse-ro, Pyeongtaek", "Overall": 8.8, "BestAt": "Dessert", "Tier": "A-Tier"}, {"Rank": 13, "Cafe": "Sisup", "Distance": "30-35 min", "Coffee": 8.0, "Food": 8.5, "Dessert": 8.5, "Vibes": 10.0, "Address": "680 Hyeondeok-ro, Hyeondeok-myeon", "Overall": 8.8, "BestAt": "Vibes", "Tier": "A-Tier"}, {"Rank": 12, "Cafe": "Where Cafe", "Distance": "30-35 min", "Coffee": 8.0, "Food": 8.0, "Dessert": 8.5, "Vibes": 9.5, "Address": "291 Oseongseo-ro, Oseong-myeon", "Overall": 8.5, "BestAt": "Vibes", "Tier": "A-Tier"}, {"Rank": 2, "Cafe": "Le Pain Cafe Bakery", "Distance": "3-5 min", "Coffee": 7.5, "Food": 9.0, "Dessert": 9.0, "Vibes": 8.0, "Address": "68-29 Anjeong-ri, Paengseong-eup", "Overall": 8.4, "BestAt": "Food", "Tier": "B-Tier"}, {"Rank": 4, "Cafe": "Cafe Hangout", "Distance": "5 min", "Coffee": 7.5, "Food": 8.0, "Dessert": 9.5, "Vibes": 8.5, "Address": "95 Anjeongsunhwan-ro 222beon-gil", "Overall": 8.4, "BestAt": "Dessert", "Tier": "B-Tier"}, {"Rank": 14, "Cafe": "Main Street", "Distance": "35-40 min", "Coffee": 7.5, "Food": 8.5, "Dessert": 8.5, "Vibes": 9.0, "Address": "37-21 Poseungsandan-ro 13beon-gil, Poseung-eup", "Overall": 8.4, "BestAt": "Vibes", "Tier": "B-Tier"}, {"Rank": 3, "Cafe": "DewDrop Coffee", "Distance": "5 min", "Coffee": 8.5, "Food": 8.0, "Dessert": 8.0, "Vibes": 8.0, "Address": "369-10 Anjeong-ri, Paengseong-eup", "Overall": 8.1, "BestAt": "Coffee", "Tier": "B-Tier"}, {"Rank": 5, "Cafe": "Ol Days Bakery", "Distance": "5-10 min", "Coffee": 7.0, "Food": 8.5, "Dessert": 9.0, "Vibes": 8.0, "Address": "120-17 Wonjeong-ri, Paengseong-eup", "Overall": 8.1, "BestAt": "Dessert", "Tier": "B-Tier"}, {"Rank": 10, "Cafe": "Heavenly Bread", "Distance": "20-30 min", "Coffee": 7.0, "Food": 9.0, "Dessert": 9.0, "Vibes": 7.5, "Address": "Pyeongtaek area", "Overall": 8.1, "BestAt": "Food", "Tier": "B-Tier"}, {"Rank": 1, "Cafe": "café louis", "Distance": "2-3 min", "Coffee": 9.0, "Food": 7.5, "Dessert": 7.0, "Vibes": 8.5, "Address": "19 Anjeong-ro, Pyeongtaek-si", "Overall": 8.0, "BestAt": "Coffee", "Tier": "B-Tier"}, {"Rank": 7, "Cafe": "Prefer", "Distance": "20-25 min", "Coffee": 8.0, "Food": 7.0, "Dessert": 7.5, "Vibes": 9.5, "Address": "243 Jisan-ro 140beon-gil", "Overall": 8.0, "BestAt": "Vibes", "Tier": "B-Tier"}, {"Rank": 9, "Cafe": "Café Cooing", "Distance": "20-25 min", "Coffee": 8.0, "Food": 7.5, "Dessert": 8.0, "Vibes": 8.5, "Address": "Pyeongtaek area", "Overall": 8.0, "BestAt": "Vibes", "Tier": "B-Tier"}, {"Rank": 15, "Cafe": "Tuff Enough Roasters", "Distance": "40+ min", "Coffee": 9.0, "Food": 7.0, "Dessert": 7.0, "Vibes": 9.0, "Address": "Pyeongtaek area", "Overall": 8.0, "BestAt": "Coffee", "Tier": "B-Tier"}, {"Rank": 8, "Cafe": "Hocus Pocus Roasters", "Distance": "20-25 min", "Coffee": 10.0, "Food": 6.0, "Dessert": 6.0, "Vibes": 8.5, "Address": "412-1 Jangan-dong", "Overall": 7.6, "BestAt": "Coffee", "Tier": "C-Tier"}];
+let currentSort = 'overall';
+let currentTier = 'all';
+let searchQuery = '';
+function getRankClass(rank) {
+  if (rank === 1) return 'rank-1';
+  if (rank === 2) return 'rank-2';
+  if (rank === 3) return 'rank-3';
+  return 'rank-other';
+}
+function getTierClass(tier) {
+  return 'tier-' + tier.toLowerCase().replace('-tier', '');
+}
+function renderCards() {
+  let filtered = [...cafes];
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(c => c.Cafe.toLowerCase().includes(q) || c.Address.toLowerCase().includes(q));
+  }
+  if (currentTier !== 'all') {
+    filtered = filtered.filter(c => c.Tier === currentTier);
+  }
+  filtered.sort((a, b) => {
+    if (currentSort === 'overall') return b.Overall - a.Overall;
+    if (currentSort === 'coffee') return b.Coffee - a.Coffee;
+    if (currentSort === 'food') return b.Food - a.Food;
+    if (currentSort === 'dessert') return b.Dessert - a.Dessert;
+    if (currentSort === 'vibes') return b.Vibes - a.Vibes;
+    if (currentSort === 'distance') return a.Rank - b.Rank;
+    return 0;
+  });
+  const container = document.getElementById('cardsContainer');
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><p>No cafes match your filters</p></div>`;
+    return;
+  }
+  container.innerHTML = filtered.map((cafe, idx) => `
+    <div class="cafe-card" onclick="toggleCard(this)">
+      <div class="card-header">
+        <div class="rank-badge ${getRankClass(idx + 1)}">${idx + 1}</div>
+        <div class="card-info">
+          <h3>${cafe.Cafe}</h3>
+          <div class="card-meta">
+            <span class="distance-pill">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${cafe.Distance}
+            </span>
+            <span class="tier-badge ${getTierClass(cafe.Tier)}">${cafe.Tier}</span>
+          </div>
+        </div>
+        <div class="overall-score">
+          <div class="score">${cafe.Overall}</div>
+          <div class="label">Overall</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="card-body">
+        <div class="card-body-inner">
+          <div class="best-at">⭐ Best at: ${cafe.BestAt}</div>
+          <div class="ratings-grid">
+            <div class="rating-item coffee ${cafe.BestAt === 'Coffee' ? 'highlight' : ''}">
+              <div class="cat-icon">☕</div>
+              <div class="cat-label">Coffee</div>
+              <div class="cat-score">${cafe.Coffee}</div>
+            </div>
+            <div class="rating-item food ${cafe.BestAt === 'Food' ? 'highlight' : ''}">
+              <div class="cat-icon">🍽</div>
+              <div class="cat-label">Food</div>
+              <div class="cat-score">${cafe.Food}</div>
+            </div>
+            <div class="rating-item dessert ${cafe.BestAt === 'Dessert' ? 'highlight' : ''}">
+              <div class="cat-icon">🍰</div>
+              <div class="cat-label">Dessert</div>
+              <div class="cat-score">${cafe.Dessert}</div>
+            </div>
+            <div class="rating-item vibes ${cafe.BestAt === 'Vibes' ? 'highlight' : ''}">
+              <div class="cat-icon">✨</div>
+              <div class="cat-label">Vibes</div>
+              <div class="cat-score">${cafe.Vibes}</div>
+            </div>
+          </div>
+          <div class="address-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>${cafe.Address}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function toggleCard(card) {
+  const wasExpanded = card.classList.contains('expanded');
+  document.querySelectorAll('.cafe-card').forEach(c => c.classList.remove('expanded'));
+  if (!wasExpanded) card.classList.add('expanded');
+}
+document.getElementById('sortFilters').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-chip')) return;
+  document.querySelectorAll('#sortFilters .filter-chip').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentSort = e.target.dataset.sort;
+  renderCards();
+});
+document.getElementById('tierFilters').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-chip')) return;
+  document.querySelectorAll('#tierFilters .filter-chip').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentTier = e.target.dataset.tier;
+  renderCards();
+});
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderCards();
+});
+renderCards();
+</script>
+</body>
+</html>
